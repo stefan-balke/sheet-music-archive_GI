@@ -1,6 +1,7 @@
 # %%
 import os
 import pandas as pd
+import matplotlib.pyplot as plt
 
 # %%
 my_dir = "/Users/stefan/Dropbox/MZE Noten"
@@ -10,49 +11,70 @@ my_dir = "/Users/stefan/Dropbox/MZE Noten"
 # Iterate through the whole directory and save the filename and the first and second directory-instrumentname
 
 # %%
-pdf_files = [("erste Instrumentenebene", "zweite Instrumentenebene", "Dateiname")]
+df_metadata = []
+
 for dirpath, dirnames, filenames in os.walk(my_dir):
     for filename in filenames:
         if filename.endswith('.pdf'):
-            print(dirpath)
+            cur_file = dict()
+            cur_file['fn'] = filename
+            cur_file['instrument_group'] = dirpath.split(os.path.sep)[5]
+
             try:
-                pdf_files.append((dirpath.split(os.path.sep)[5], dirpath.split(os.path.sep)[6], filename))
+                # if it has two levels of instruments
+                cur_file['instrument'] = dirpath.split(os.path.sep)[6]
             except:
-                pdf_files.append((dirpath.split(os.path.sep)[5], None, filename))
+                cur_file['instrument'] = ''
 
-pdf_files
+            cur_file['path'] = os.path.join(cur_file['instrument_group'], cur_file['instrument'], cur_file['fn'])
 
-# %% [markdown]
-# make list to pandas dataframe and extract the expected name of the instrument from the filename
+            df_metadata.append(cur_file)
+
+df_metadata = pd.DataFrame(df_metadata)
+print(df_metadata.head(10))
 
 # %%
+# make list to pandas dataframe and extract the expected name of the instrument from the filename
+
+def extract_instrument(filename):
+    if " - " in filename:
+        return filename[(filename.rfind(' - ')) + 3:-4]
+    else:
+        return ""
+    
+
 def extract_title(filename):
     if " - " in filename:
-        return filename[filename.rfind(" - ") + 3:]
+        return filename[:(filename.rfind(' - '))]
     else:
         return ""
 
-pdf_files_pd = pd.DataFrame(pdf_files[1:], columns=pdf_files[0])
-pdf_files_pd["Dateiname_Instrument"] = pdf_files_pd["Dateiname"].apply(extract_title)
-pdf_files_pd
-
-# %% [markdown]
-# iterate over the results
+df_metadata['instrument_from_fn'] = df_metadata['fn'].apply(extract_instrument)
+df_metadata['title'] = df_metadata['fn'].apply(extract_title)
+df_metadata
 
 # %%
-for ix, row in pdf_files_pd.iterrows():
-    print(row["Dateiname_Instrument"], "|||", row["erste Instrumentenebene"], " ----- ", row["zweite Instrumentenebene"])
+# Data Cleanup
+df_metadata[df_metadata['instrument_group'] == 'Partitur']
 
-# %% [markdown]
-# ## get unique instrument names
-# 
-# bit of work to do still....
+# partitur is not considered
 
 # %%
-pd.set_option("display.max_rows", None)
-print(pdf_files_pd["Dateiname_Instrument"].value_counts(dropna=False))
-pd.set_option("display.max_rows", 10)
+# First Statistics
 
+print('number of files:', df_metadata.shape)
 
+print('number of pieces:', df_metadata.groupby('title').ngroups)
+
+print('number of files per piece')
+df_metadata.groupby('title').size().sort_values(ascending=True).plot.barh(figsize=(10, 30), fontsize=4)
+plt.show()
+
+# number of files per instrument group
+df_metadata.groupby('instrument_group').size().sort_values(ascending=True).plot.barh()
+plt.show()
+
+# number of files per instrument
+df_metadata.groupby('instrument_from_fn').size().sort_values(ascending=True).plot.barh(figsize=(10, 30), fontsize=4)
 
 # %%
