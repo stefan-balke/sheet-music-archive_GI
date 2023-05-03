@@ -7,7 +7,7 @@ from pypdf import PdfReader
 import fitz
 
 # %%
-df_metadata = pd.read_csv('metadata.csv', header=0)
+df_metadata = pd.read_csv('metadata.csv', header=0).sample(100)
 
 # %%
 # initialize easyOCR model
@@ -44,7 +44,7 @@ def process_image(path):
 # %%
 results = dict()
 
-for _, cur_row in df_metadata.head(10).iterrows():
+for _, cur_row in df_metadata.iterrows():
     cur_path = cur_row['path']  
 
     try:
@@ -52,3 +52,5 @@ for _, cur_row in df_metadata.head(10).iterrows():
     except:
         print('Skipped {}'.format(cur_path))
 
+
+# %%
