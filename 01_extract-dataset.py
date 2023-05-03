@@ -93,3 +93,5 @@ plt.show()
 
 
 # %%
+df_metadata.to_csv('metadata.csv')
+
