@@ -103,29 +103,32 @@ for cur_piece in sample_pieces:
     cur_ocr_result = ocr_results[cur_piece]
     cur_img = load_image(cur_piece)
 
-    box_sizes = []
-
     cur_ocr_result_filtered = []
 
     for cur_box in cur_ocr_result:
         coords = cur_box[0]
-        cur_box_size = (coords[2][0] - coords[3][0]) * (coords[3][1] - coords[1][1])
 
         # check if box is within the first 20% of the document (from top)
         max_box_pos = np.max(np.array(coords)[:, 1] / cur_img.shape[0])
         if max_box_pos <= 0.2:
-            box_sizes.append(cur_box_size)
             cur_ocr_result_filtered.append(cur_box)
 
     # merge bounding boxes using EasyOCR's `get_paragraph` function
     cur_ocr_result_merged = easyocr.utils.get_paragraph(cur_ocr_result_filtered, x_ths=0.5, y_ths=0)
+
+    box_sizes = []
+
+    for cur_box in cur_ocr_result_merged:
+        coords = cur_box[0]
+        cur_box_size = (coords[2][0] - coords[3][0]) * (coords[3][1] - coords[1][1])
+        box_sizes.append(cur_box_size)
 
     # display_results(cur_img, cur_ocr_result_merged)
 
     if len(box_sizes) > 0:
         cur_prediction = dict()
         cur_prediction['path'] = cur_piece
-        cur_prediction['pred_3rd'] = cur_ocr_result[np.argmax(box_sizes)][-2]
+        cur_prediction['pred_3rd'] = cur_ocr_result_merged[np.argmax(box_sizes)][-1]
         predictions_3.append(cur_prediction)
 
 plt.close()
@@ -137,3 +140,5 @@ predictions = predictions.merge(predictions_2, on='path')
 predictions = predictions.merge(predictions_3, on='path')
 predictions = predictions.merge(df_metadata, on='path')
 predictions[['path', 'pred_1st', 'pred_2nd', 'pred_3rd', 'title']].to_csv('pred.csv')
+
+# %%
