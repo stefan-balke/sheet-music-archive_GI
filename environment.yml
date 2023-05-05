@@ -9,8 +9,10 @@ dependencies:
     - numpy
     - pandas
     - matplotlib
+    - seaborn
     - pip
     - pip:
         - easyocr
         - pypdf
         - pymupdf
+        - editdistance
